@@ -65,7 +65,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
 function loadDashboard() {
     if (currentUser) {
         document.getElementById('points-display').textContent = currentUser.points || 0;
-        // Cargar materiales, etc.
+        // Cargar materiales, etc. (puedes expandir esto)
     }
 }
 
@@ -85,4 +85,84 @@ document.getElementById('update-values-form').addEventListener('submit', async (
             },
             body: JSON.stringify({ material, points, money })
         });
-        if (response
+        if (response.ok) {
+            alert('Valores actualizados');
+        } else {
+            alert('Error al actualizar');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+// Generar reporte
+function generateReport() {
+    // Lógica para generar reporte (placeholder)
+    alert('Reporte generado');
+}
+
+// Exportar a Excel
+function exportToExcel() {
+    // Usando XLSX para exportar datos
+    const data = [
+        ['Material', 'Puntos', 'Dinero'],
+        ['Plástico', 10, 5],
+        ['Papel', 5, 2]
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+    XLSX.writeFile(wb, 'reporte.xlsx');
+}
+
+// Canjear puntos
+function redeemPoints() {
+    // Lógica para canjear puntos (placeholder)
+    alert('Puntos canjeados');
+}
+
+// Administrar usuarios
+function manageUsers() {
+    // Lógica para administrar usuarios (placeholder)
+    alert('Administrar usuarios');
+}
+
+// Logout
+function logout() {
+    localStorage.removeItem('token');
+    currentUser = null;
+    document.querySelectorAll('.container, .hero-section, #navbar').forEach(el => el.classList.add('d-none'));
+    document.getElementById('login-section').classList.remove('d-none');
+}
+
+// Actualizar perfil
+document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('profile-name').value;
+    const email = document.getElementById('profile-email').value;
+    const phone = document.getElementById('profile-phone').value;
+    const address = document.getElementById('profile-address').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ name, email, phone, address })
+        });
+        if (response.ok) {
+            alert('Perfil actualizado');
+        } else {
+            alert('Error al actualizar perfil');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+// Inicializar (mostrar login al cargar)
+document.addEventListener('DOMContentLoaded', () => {
+    showSection('login-section');
+});
