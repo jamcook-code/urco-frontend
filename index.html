@@ -1,87 +1,264 @@
-/* Variables de colores */
-:root {
-    --primary-color: #28a745;
-    --secondary-color: #007bff;
-    --accent-color: #ffc107;
-    --danger-color: #dc3545;
-    --light-bg: #f8f9fa;
-    --dark-text: #343a40;
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URCO - Sistema de Reciclaje</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tu CSS personalizado -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="login-section" class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h2>Iniciar Sesión</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="login-form">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Correo Electrónico</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Contraseña</label>
+                                <input type="password" class="form-control" id="password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-link" onclick="showRegisterModal()">¿No tienes cuenta? Regístrate</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: var(--light-bg);
-    color: var(--dark-text);
-}
+    <div id="main-content" style="display: none;">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">URCO</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showProfileModal()">Perfil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="logout()">Cerrar Sesión</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
 
-.hero-section {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-}
+        <section class="hero-section text-center py-5">
+            <div class="container">
+                <h1>Bienvenido a URCO</h1>
+                <p>Sistema de Reciclaje para un Futuro Sostenible</p>
+            </div>
+        </section>
 
-.navbar {
-    background-color: var(--primary-color) !important;
-}
+        <div class="container mt-5">
+            <ul class="nav nav-tabs" id="roleTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="beneficiario-tab" data-bs-toggle="tab" data-bs-target="#beneficiario" type="button" role="tab">Beneficiario</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="gestor-tab" data-bs-toggle="tab" data-bs-target="#gestor" type="button" role="tab">Gestor URCO</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="aliado-tab" data-bs-toggle="tab" data-bs-target="#aliado" type="button" role="tab">Aliado</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">Administrador</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="roleTabContent">
+                <div class="tab-pane fade show active" id="beneficiario" role="tabpanel">
+                    <h3>Panel de Beneficiario</h3>
+                    <p>Puntos acumulados: <span id="user-points">0</span></p>
+                    <button class="btn btn-success" onclick="showRecycleModal()">Reciclar Material</button>
+                    <button class="btn btn-info" onclick="showRedeemModal()">Canjear Puntos</button>
+                </div>
+                <div class="tab-pane fade" id="gestor" role="tabpanel">
+                    <h3>Panel de Gestor URCO</h3>
+                    <button class="btn btn-primary" onclick="showUpdateValuesModal()">Actualizar Valores de Reciclaje</button>
+                    <button class="btn btn-warning" onclick="generateReport()">Generar Reporte</button>
+                </div>
+                <div class="tab-pane fade" id="aliado" role="tabpanel">
+                    <h3>Panel de Aliado</h3>
+                    <p>Gestión de recompensas y colaboraciones.</p>
+                </div>
+                <div class="tab-pane fade" id="admin" role="tabpanel">
+                    <h3>Panel de Administrador</h3>
+                    <button class="btn btn-danger" onclick="showUserManagementModal()">Gestión de Usuarios</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-.card {
-    border: none;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+    <!-- Modales -->
+    <div class="modal fade" id="registerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="register-form">
+                        <div class="mb-3">
+                            <label for="reg-name" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="reg-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-email" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="reg-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="reg-password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-phone" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="reg-phone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-address" class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="reg-address">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-role" class="form-label">Rol</label>
+                            <select class="form-control" id="reg-role" required>
+                                <option value="Beneficiario">Beneficiario</option>
+                                <option value="Gestor URCO">Gestor URCO</option>
+                                <option value="Aliado">Aliado</option>
+                                <option value="Administrador">Administrador</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Registrar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-.btn-primary {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-}
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Perfil de Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Nombre: <span id="profile-name"></span></p>
+                    <p>Email: <span id="profile-email"></span></p>
+                    <p>Rol: <span id="profile-role"></span></p>
+                    <p>Puntos: <span id="profile-points"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-.btn-primary:hover {
-    background-color: #218838;
-    border-color: #1e7e34;
-}
+    <div class="modal fade" id="recycleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reciclar Material</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="recycle-form">
+                        <div class="mb-3">
+                            <label for="material" class="form-label">Material</label>
+                            <select class="form-control" id="material" required>
+                                <!-- Opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Cantidad (kg)</label>
+                            <input type="number" class="form-control" id="quantity" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Reciclar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-.btn-success {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-}
+    <div class="modal fade" id="redeemModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Canjear Puntos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Puntos disponibles: <span id="redeem-points"></span></p>
+                    <button class="btn btn-info">Canjear por Recompensa</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-.btn-success:hover {
-    background-color: #0056b3;
-    border-color: #004085;
-}
+    <div class="modal fade" id="updateValuesModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Actualizar Valores de Reciclaje</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="update-values-form">
+                        <div class="mb-3">
+                            <label for="update-material" class="form-label">Material</label>
+                            <input type="text" class="form-control" id="update-material" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-points" class="form-label">Puntos por kg</label>
+                            <input type="number" class="form-control" id="update-points" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-money" class="form-label">Dinero por kg</label>
+                            <input type="number" class="form-control" id="update-money" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-.btn-info {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: var(--dark-text);
-}
+    <div class="modal fade" id="userManagementModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gestión de Usuarios</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Lista de usuarios aquí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-.btn-info:hover {
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
+    <footer class="bg-dark text-white text-center py-3">
+        <p>&copy; 2023 URCO. Todos los derechos reservados.</p>
+    </footer>
 
-.btn-warning {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-    color: var(--dark-text);
-}
-
-.btn-warning:hover {
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
-
-.btn-danger {
-    background-color: var(--danger-color);
-    border-color: var(--danger-color);
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
-    border-color: #bd2130;
-}
-
-footer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-}
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- XLSX para exportar -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Tu JS personalizado -->
+    <script src="script.js"></script>
+</body>
+</html>
