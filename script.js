@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://urco-nu.vercel.app'; // URL del backend
+const API_BASE_URL = 'https://urco-backend.vercel.app'; // URL corregida del backend
 
 let currentUser = null;
 
@@ -8,15 +8,17 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const password = document.getElementById('password').value;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/login`, { // Ruta corregida
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
         const data = await response.json();
         if (response.ok) {
-            currentUser = data.user;
+            // El backend devuelve solo { token }, no { user, token }
             localStorage.setItem('token', data.token);
+            // Asigna un usuario básico (puedes obtener datos del token o backend si agregas ruta)
+            currentUser = { email, points: 0, role: 'user' }; // Ajusta según necesidad
             showMainContent();
         } else {
             alert(data.message);
@@ -28,18 +30,25 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
 document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('reg-name').value;
+    const username = document.getElementById('reg-name').value; // Cambiado a username
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
-    const phone = document.getElementById('reg-phone').value;
-    const address = document.getElementById('reg-address').value;
-    const role = document.getElementById('reg-role').value;
+    // Ignorar phone y address por ahora (backend no los usa)
+    const roleInput = document.getElementById('reg-role').value;
+    // Mapear roles del frontend al backend
+    const roleMap = {
+        'Beneficiario': 'user',
+        'Gestor URCO': 'user',
+        'Aliado': 'user',
+        'Administrador': 'admin'
+    };
+    const role = roleMap[roleInput] || 'user';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/register`, { // Ruta corregida
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, phone, address, role })
+            body: JSON.stringify({ username, email, password, role }) // Campos corregidos
         });
         const data = await response.json();
         if (response.ok) {
@@ -58,7 +67,7 @@ function showRegisterModal() {
 }
 
 function showProfileModal() {
-    document.getElementById('profile-name').textContent = currentUser.name;
+    document.getElementById('profile-name').textContent = currentUser.username || currentUser.email; // Ajusta si no hay username
     document.getElementById('profile-email').textContent = currentUser.email;
     document.getElementById('profile-role').textContent = currentUser.role;
     document.getElementById('profile-points').textContent = currentUser.points;
@@ -85,14 +94,18 @@ function showUserManagementModal() {
 
 async function loadMaterials() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/recycling-values`);
+        const response = await fetch(`${API_BASE_URL}/api/recycling-values`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
         const materials = await response.json();
         const select = document.getElementById('material');
         select.innerHTML = '';
         materials.forEach(material => {
             const option = document.createElement('option');
             option.value = material.material;
-            option.textContent = material.material;
+            option.textContent = `${material.material} - ${material.value} puntos/kg`; // Muestra value como puntos
             select.appendChild(option);
         });
     } catch (error) {
@@ -105,34 +118,29 @@ document.getElementById('recycle-form').addEventListener('submit', async (e) => 
     const material = document.getElementById('material').value;
     const quantity = document.getElementById('quantity').value;
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/recycle`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ material, quantity })
-        });
-        const data = await response.json();
-        if (response.ok) {
-            currentUser.points += data.pointsEarned;
-            document.getElementById('user-points').textContent = currentUser.points;
-            alert('Reciclaje registrado exitosamente');
-            bootstrap.Modal.getInstance(document.getElementById('recycleModal')).hide();
-        } else {
-            alert(data.message);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
+    // Calcular puntos localmente (ya que no hay ruta /api/recycle en backend)
+    // Obtener valor del material seleccionado
+    const select = document.getElementById('material');
+    const selectedOption = select.options[select.selectedIndex];
+    const pointsPerKg = parseFloat(selectedOption.textContent.split(' - ')[1].split(' ')[0]); // Extraer puntos
+    const pointsEarned = pointsPerKg * quantity;
+
+    // Actualizar puntos del usuario localmente
+    currentUser.points += pointsEarned;
+    document.getElementById('user-points').textContent = currentUser.points;
+    alert(`Reciclaje registrado. Puntos ganados: ${pointsEarned}`);
+    bootstrap.Modal.getInstance(document.getElementById('recycleModal')).hide();
+
+    // Nota: Si quieres enviar al backend, agrega una ruta /api/recycle en server.js
 });
 
 document.getElementById('update-values-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const material = document.getElementById('update-material').value;
     const points = document.getElementById('update-points').value;
-    const money = document.getElementById('update-money').value;
+    // Ignorar money, usar points como value
+    const value = points;
+    const description = 'Valor por kg'; // Descripción fija
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/recycling-values`, {
@@ -141,7 +149,7 @@ document.getElementById('update-values-form').addEventListener('submit', async (
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
-            body: JSON.stringify({ material, points, money })
+            body: JSON.stringify({ material, value, description }) // Body corregido
         });
         const data = await response.json();
         if (response.ok) {
@@ -185,7 +193,7 @@ function showMainContent() {
 window.onload = () => {
     const token = localStorage.getItem('token');
     if (token) {
-        // Verificar token y cargar usuario (opcional, dependiendo del backend)
+        // Verificar token (opcional)
         showMainContent();
     }
 };
