@@ -23,6 +23,14 @@ body {
     background-color: var(--primary-color) !important;
 }
 
+.navbar-brand img {
+    max-height: 40px;
+}
+
+#login-section img {
+    margin: 0 10px;
+}
+
 .card {
     border: none;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
