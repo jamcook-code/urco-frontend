@@ -2,6 +2,13 @@ const API_BASE_URL = 'https://urco-backend.vercel.app'; // URL del backend
 
 let currentUser = null;
 
+// Evento para mostrar/ocultar campo de clave en registro
+document.getElementById('reg-role').addEventListener('change', (e) => {
+    const keyField = document.getElementById('key-field');
+    keyField.style.display = e.target.value !== 'user' ? 'block' : 'none';
+});
+
+// Login
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
@@ -26,18 +33,20 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     }
 });
 
+// Registro con validación de clave
 document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('reg-name').value;
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
-    const key = document.getElementById('reg-key').value;
+    const role = document.getElementById('reg-role').value;
+    const registrationKey = document.getElementById('reg-key').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password, key, role: 'user' }) // Siempre registra como user
+            body: JSON.stringify({ username, email, password, role, registrationKey })
         });
         const data = await response.json();
         if (response.ok) {
@@ -51,17 +60,7 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     }
 });
 
-function showRegisterModal() {
-    new bootstrap.Modal(document.getElementById('registerModal')).show();
-}
-
-function showProfileModal() {
-    document.getElementById('edit-name').value = currentUser.username || '';
-    document.getElementById('edit-email').value = currentUser.email;
-    document.getElementById('edit-key').value = currentUser.key || '';
-    new bootstrap.Modal(document.getElementById('profileModal')).show();
-}
-
+// Perfil editable
 document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('edit-name').value;
@@ -88,63 +87,53 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
     }
 });
 
-function showRecycleModal() {
-    loadMaterials();
-    new bootstrap.Modal(document.getElementById('recycleModal')).show();
-}
-
-function showRedeemModal() {
-    document.getElementById('redeem-points').textContent = currentUser.points;
-    new bootstrap.Modal(document.getElementById('redeemModal')).show();
-}
-
-function showUpdateValuesModal() {
-    new bootstrap.Modal(document.getElementById('updateValuesModal')).show();
-}
-
-function showUserManagementModal() {
-    loadUsers();
-    new bootstrap.Modal(document.getElementById('userManagementModal')).show();
-}
-
-async function loadMaterials() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/recycling-values`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        const materials = await response.json();
-        const select = document.getElementById('material');
-        select.innerHTML = '';
-        materials.forEach(material => {
-            const option = document.createElement('option');
-            option.value = material.material;
-            option.textContent = `${material.material} - ${material.value} puntos/kg`;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error loading materials:', error);
-    }
-}
-
-document.getElementById('recycle-form').addEventListener('submit', async (e) => {
+// Asignar puntos (gestor)
+document.getElementById('assign-points-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const material = document.getElementById('material').value;
-    const quantity = document.getElementById('quantity').value;
+    const email = document.getElementById('user-email').value;
+    const points = document.getElementById('points-to-add').value;
 
-    // Calcular puntos localmente
-    const select = document.getElementById('material');
-    const selectedOption = select.options[select.selectedIndex];
-    const pointsPerKg = parseFloat(selectedOption.textContent.split(' - ')[1].split(' ')[0]);
-    const pointsEarned = pointsPerKg * quantity;
-
-    currentUser.points += pointsEarned;
-    document.getElementById('user-points').textContent = currentUser.points;
-    alert(`Reciclaje registrado. Puntos ganados: ${pointsEarned}`);
-    bootstrap.Modal.getInstance(document.getElementById('recycleModal')).hide();
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/add-points`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ email, points })
+        });
+        if (response.ok) {
+            alert('Puntos asignados');
+        } else {
+            alert('Error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 });
 
+// Descontar puntos (aliado)
+document.getElementById('deduct-points-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('deduct-email').value;
+    const points = document.getElementById('points-to-deduct').value;
+    const description = document.getElementById('deduct-description').value;
+    const key = document.getElementById('user-key').value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ email, points, description, key })
+        });
+        if (response.ok) {
+            alert('Puntos descontados');
+        } else {
+            alert('Error o clave incorrecta');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+// Actualizar valores de reciclaje
 document.getElementById('update-values-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const material = document.getElementById('update-material').value;
@@ -173,50 +162,77 @@ document.getElementById('update-values-form').addEventListener('submit', async (
     }
 });
 
-document.getElementById('assign-points-form').addEventListener('submit', async (e) => {
+// Reciclaje (beneficiario)
+document.getElementById('recycle-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('user-email').value;
-    const points = document.getElementById('points-to-add').value;
+    const material = document.getElementById('material').value;
+    const quantity = document.getElementById('quantity').value;
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/users/add-points`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ email, points })
-        });
-        if (response.ok) {
-            alert('Puntos asignados');
-        } else {
-            alert('Error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
+    const select = document.getElementById('material');
+    const selectedOption = select.options[select.selectedIndex];
+    const pointsPerKg = parseFloat(selectedOption.textContent.split(' - ')[1].split(' ')[0]);
+    const pointsEarned = pointsPerKg * quantity;
+
+    currentUser.points += pointsEarned;
+    document.getElementById('user-points').textContent = currentUser.points;
+    alert(`Reciclaje registrado. Puntos ganados: ${pointsEarned}`);
+    bootstrap.Modal.getInstance(document.getElementById('recycleModal')).hide();
 });
 
-document.getElementById('deduct-points-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('deduct-email').value;
-    const points = document.getElementById('points-to-deduct').value;
-    const description = document.getElementById('deduct-description').value;
-    const key = document.getElementById('user-key').value;
+// Funciones de modales
+function showRegisterModal() {
+    new bootstrap.Modal(document.getElementById('registerModal')).show();
+}
 
+function showProfileModal() {
+    document.getElementById('edit-name').value = currentUser.username || '';
+    document.getElementById('edit-email').value = currentUser.email;
+    document.getElementById('edit-key').value = currentUser.key || '';
+    new bootstrap.Modal(document.getElementById('profileModal')).show();
+}
+
+function showRecycleModal() {
+    loadMaterials();
+    new bootstrap.Modal(document.getElementById('recycleModal')).show();
+}
+
+function showRedeemModal() {
+    document.getElementById('redeem-points').textContent = currentUser.points;
+    new bootstrap.Modal(document.getElementById('redeemModal')).show();
+}
+
+function showUpdateValuesModal() {
+    new bootstrap.Modal(document.getElementById('updateValuesModal')).show();
+}
+
+function showUserManagementModal() {
+    loadUsers();
+    new bootstrap.Modal(document.getElementById('userManagementModal')).show();
+}
+
+// Cargar materiales
+async function loadMaterials() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ email, points, description, key })
+        const response = await fetch(`${API_BASE_URL}/api/recycling-values`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
-        if (response.ok) {
-            alert('Puntos descontados');
-        } else {
-            alert('Error o clave incorrecta');
-        }
+        const materials = await response.json();
+        const select = document.getElementById('material');
+        select.innerHTML = '';
+        materials.forEach(material => {
+            const option = document.createElement('option');
+            option.value = material.material;
+            option.textContent = `${material.material} - ${material.value} puntos/kg`;
+            select.appendChild(option);
+        });
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error loading materials:', error);
     }
-});
+}
 
+// Cargar usuarios (admin)
 async function loadUsers() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/users`, {
@@ -233,6 +249,7 @@ async function loadUsers() {
     }
 }
 
+// Eliminar usuario (admin)
 async function deleteUser(userId) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
@@ -250,16 +267,51 @@ async function deleteUser(userId) {
     }
 }
 
+// Exportar usuarios a Excel (admin)
 function exportUsers() {
-    // Lógica para exportar usuarios a Excel (usando XLSX)
     const data = [['Nombre', 'Email', 'Rol', 'Puntos']];
-    // Agrega datos de usuarios
+    // Aquí agregarías los datos reales de usuarios
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
     XLSX.writeFile(wb, 'usuarios.xlsx');
 }
 
+// Cargar claves de registro (admin)
+async function loadRegistrationKeys() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const keys = await response.json();
+        const list = document.getElementById('keys-list');
+        list.innerHTML = '<h4>Claves de Registro</h4>';
+        keys.forEach(key => {
+            list.innerHTML += `<p>${key.role}: <input type="password" id="key-${key.role}" value="${key.key}"> <button onclick="updateKey('${key.role}')">Actualizar</button></p>`;
+        });
+    } catch (error) {
+        console.error('Error loading keys:', error);
+    }
+}
+
+// Actualizar clave (admin)
+async function updateKey(role) {
+    const key = document.getElementById(`key-${role}`).value;
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ role, key })
+        });
+        if (response.ok) {
+            alert('Clave actualizada');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Generar reporte
 function generateReport() {
     const data = [['Material', 'Puntos', 'Dinero'], ['Plástico', 10, 0.5]];
     const ws = XLSX.utils.aoa_to_sheet(data);
@@ -268,6 +320,7 @@ function generateReport() {
     XLSX.writeFile(wb, 'reporte_reciclaje.xlsx');
 }
 
+// Logout
 function logout() {
     localStorage.removeItem('token');
     currentUser = null;
@@ -275,6 +328,7 @@ function logout() {
     document.getElementById('login-section').style.display = 'block';
 }
 
+// Mostrar contenido principal con vistas por rol
 function showMainContent() {
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
@@ -294,6 +348,7 @@ function showMainContent() {
     }
 }
 
+// Cargar historial de puntos (beneficiario)
 async function loadPointsHistory() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/points-history`, {
@@ -311,7 +366,7 @@ async function loadPointsHistory() {
     }
 }
 
-// Inicializar al cargar la página
+// Inicializar
 window.onload = () => {
     const token = localStorage.getItem('token');
     if (token) {
