@@ -111,10 +111,17 @@ document.getElementById('assign-points-form').addEventListener('submit', async (
     if (mode === 'manual') {
         email = document.getElementById('user-email').value;
         points = document.getElementById('points-to-add').value;
+        if (!email || !points) {
+            alert('Completa todos los campos');
+            return;
+        }
     } else {
         email = document.getElementById('calc-user-email').value;
-        const material = document.getElementById('calc-material').value;
         const quantity = document.getElementById('calc-quantity').value;
+        if (!email || !quantity) {
+            alert('Completa todos los campos');
+            return;
+        }
         const select = document.getElementById('calc-material');
         const selectedOption = select.options[select.selectedIndex];
         const pointsPerKg = parseFloat(selectedOption.textContent.split(' - ')[1].split(' ')[0]);
@@ -292,7 +299,7 @@ async function loadRecyclingValuesTable() {
         tbody.innerHTML = '';
         values.forEach(value => {
             const actions = (currentUser.role === 'gestor' || currentUser.role === 'admin') 
-                ? `<button onclick="editValue('${value._id}', '${value.material}', ${value.value})">Editar</button>` 
+                ? `<button onclick="editValue('${value._id}', '${value.material}', ${value.value})">Editar</button> <button onclick="deleteValue('${value._id}')">Eliminar</button>` 
                 : '';
             const row = `<tr><td>${value.material}</td><td>${value.value}</td><td>${actions}</td></tr>`;
             tbody.innerHTML += row;
@@ -307,6 +314,44 @@ function editValue(id, material, value) {
     document.getElementById('update-material').value = material;
     document.getElementById('update-points').value = value;
     showUpdateValuesModal();
+}
+
+// Eliminar valor
+async function deleteValue(id) {
+    if (confirm('¿Eliminar este valor?')) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/recycling-values/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                alert('Valor eliminado');
+                loadRecyclingValuesTable();
+            } else {
+                alert('Error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+}
+
+// Cargar tabla de usuarios (gestor/admin)
+async function loadUsersTable() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const users = await response.json();
+        const tbody = document.querySelector('#users-table tbody');
+        tbody.innerHTML = '';
+        users.forEach(user => {
+            const row = `<tr><td>${user.username}</td><td>${user.email}</td><td>${user.role}</td><td>${user.points}</td></tr>`;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Error loading users table:', error);
+    }
 }
 
 // Cargar usuarios (admin)
@@ -422,24 +467,26 @@ function showMainContent() {
         pane.classList.remove('show', 'active');
     });
 
-    // Mostrar solo el panel correspondiente al rol
-    if (currentUser.role === 'user') {
-        document.getElementById('beneficiario-tab').style.display = 'block';
-        document.getElementById('beneficiario').classList.add('show', 'active');
-        loadPointsHistory();
-    } else if (currentUser.role === 'gestor') {
-        document.getElementById('gestor-tab').style.display = 'block';
-        document.getElementById('gestor').classList.add('show', 'active');
-    } else if (currentUser.role === 'aliado') {
-        document.getElementById('aliado-tab').style.display = 'block';
-        document.getElementById('aliado').classList.add('show', 'active');
-    } else if (currentUser.role === 'admin') {
-        tabs.forEach(tab => tab.style.display = 'block'); // Admin ve todas
-        document.getElementById('admin').classList.add('show', 'active');
-    }
+ // Mostrar solo el panel correspondiente al rol
+if (currentUser.role === 'user') {
+    document.getElementById('beneficiario-tab').style.display = 'block';
+    document.getElementById('beneficiario').classList.add('show', 'active');
+    loadPointsHistory();
+} else if (currentUser.role === 'gestor') {
+    document.getElementById('gestor-tab').style.display = 'block';
+    document.getElementById('gestor').classList.add('show', 'active');
+    loadUsersTable(); // Cargar tabla de usuarios para gestor
+} else if (currentUser.role === 'aliado') {
+    document.getElementById('aliado-tab').style.display = 'block';
+    document.getElementById('aliado').classList.add('show', 'active');
+} else if (currentUser.role === 'admin') {
+    tabs.forEach(tab => tab.style.display = 'block'); // Admin ve todas
+    document.getElementById('admin').classList.add('show', 'active');
+    loadUsersTable(); // Cargar tabla de usuarios para admin
+}
 
-    // Cargar tabla global para todos
-    loadRecyclingValuesTable();
+// Cargar tabla global para todos
+loadRecyclingValuesTable();
 }
 
 // Cargar historial de puntos (beneficiario)
@@ -457,6 +504,24 @@ async function loadPointsHistory() {
         });
     } catch (error) {
         console.error('Error loading history:', error);
+    }
+}
+
+// Cargar tabla de usuarios para gestor/admin
+async function loadUsersTable() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const users = await response.json();
+        const tbody = document.querySelector('#users-table tbody');
+        tbody.innerHTML = '';
+        users.forEach(user => {
+            const row = `<tr><td>${user.username}</td><td>${user.email}</td><td>${user.role}</td><td>${user.points}</td></tr>`;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Error loading users table:', error);
     }
 }
 

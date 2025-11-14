@@ -123,15 +123,18 @@
                             <input type="number" id="points-to-add" placeholder="Puntos a agregar" class="form-control mb-2" required>
                         </div>
                         <div id="calculate-fields" style="display: none;">
-                            <input type="email" id="calc-user-email" placeholder="Email del beneficiario" class="form-control mb-2" required>
-                            <select id="calc-material" class="form-control mb-2" required>
-                                <!-- Opciones cargadas dinámicamente -->
-                            </select>
-                            <input type="number" id="calc-quantity" placeholder="Cantidad (kg)" class="form-control mb-2" required>
+                            <input type="email" id="calc-user-email" placeholder="Email del beneficiario" class="form-control mb-2">
+                            <select id="calc-material" class="form-control mb-2"></select>
+                            <input type="number" id="calc-quantity" placeholder="Cantidad (kg)" class="form-control mb-2">
                         </div>
                         <input type="text" id="assign-description" placeholder="Descripción (ej. Reciclaje de plástico)" class="form-control mb-2" required>
                         <button type="submit" class="btn btn-success">Asignar Puntos</button>
                     </form>
+                    <h4>Usuarios Registrados</h4>
+                    <table id="users-table" class="table">
+                        <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Puntos</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
                 <div class="tab-pane fade" id="aliado" role="tabpanel">
                     <h3>Panel de Aliado</h3>

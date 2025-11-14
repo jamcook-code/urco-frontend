@@ -92,6 +92,8 @@ footer {
     position: fixed;
     bottom: 0;
     width: 100%;
-    font-size: 0.8em; /* Agrega tamaño de fuente más pequeño */
-    padding: 5px 0; /* Reduce padding */
+    font-size: 0.8em; /* Más pequeño */
+    padding: 5px 0; /* Padding reducido */
+    height: auto; /* Altura automática */
+    background-color: #f8f9fa; /* Fondo visible */
 }
