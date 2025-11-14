@@ -265,15 +265,19 @@ function showRegisterModal() {
 }
 
 function showProfileModal() {
+    console.log('Abriendo modal de perfil, rol:', currentUser.role);
     document.getElementById('edit-email').value = currentUser.email;
     document.getElementById('edit-address').value = currentUser.address || '';
     document.getElementById('edit-phone').value = currentUser.phone || '';
     document.getElementById('edit-password').value = '';
     const keyField = document.getElementById('key-field');
+    console.log('keyField encontrado:', keyField);
     if (currentUser.role === 'user') {
+        console.log('Mostrando clave personal para user');
         keyField.style.display = 'block';
         document.getElementById('edit-key').value = currentUser.key || '';
     } else {
+        console.log('Ocultando clave personal, rol no es user');
         keyField.style.display = 'none';
     }
     const storeField = document.getElementById('store-field');
@@ -614,6 +618,12 @@ function logout() {
 
 // Mostrar contenido principal con vistas restringidas por rol
 function showMainContent() {
+    if (!currentUser) {
+        console.log('currentUser es null, redirigiendo a login');
+        logout();
+        return;
+    }
+    console.log('showMainContent ejecutado, rol:', currentUser.role);
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
     document.getElementById('user-role-display').textContent = `Tipo de Usuario: ${currentUser.role}`;
