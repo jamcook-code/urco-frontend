@@ -1,6 +1,7 @@
 const API_BASE_URL = 'https://urco-backend.vercel.app'; // URL del backend
 
 let currentUser = null;
+let materialsData = []; // Variable global para materiales en calculadora
 
 // Evento para mostrar/ocultar campo de clave en registro
 document.getElementById('reg-role').addEventListener('change', (e) => {
@@ -38,6 +39,20 @@ document.getElementById('admin-filter-phone').addEventListener('input', filterAd
 document.getElementById('admin-filter-role').addEventListener('change', filterAdminUsersTable);
 document.getElementById('admin-filter-points').addEventListener('input', filterAdminUsersTable);
 
+// Eventos para búsqueda global (gestor)
+document.getElementById('search-name').addEventListener('input', searchUser);
+
+// Eventos para búsqueda global (admin)
+document.getElementById('admin-search-name').addEventListener('input', searchAdminUser);
+
+// Evento para calcular puntos en tiempo real
+document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('calc-input')) {
+        const total = calculatePointsFromMaterials();
+        document.getElementById('total-points').textContent = `Puntos totales: ${total}`;
+    }
+});
+
 // Login
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -63,7 +78,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     }
 });
 
-// Registro con validación de clave
+// Registro con dirección y teléfono opcionales
 document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('reg-name').value;
@@ -71,12 +86,14 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     const password = document.getElementById('reg-password').value;
     const role = document.getElementById('reg-role').value;
     const registrationKey = document.getElementById('reg-key').value;
+    const address = document.getElementById('reg-address').value;
+    const phone = document.getElementById('reg-phone').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password, role, registrationKey })
+            body: JSON.stringify({ username, email, password, role, registrationKey, address, phone })
         });
         const data = await response.json();
         if (response.ok) {
@@ -90,12 +107,13 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     }
 });
 
-// Perfil editable con dirección, teléfono, tienda
+// Perfil editable con dirección, teléfono, tienda, contraseña y clave personal solo para 'user'
 document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('edit-email').value;
     const address = document.getElementById('edit-address').value;
     const phone = document.getElementById('edit-phone').value;
+    const password = document.getElementById('edit-password').value;
     const key = document.getElementById('edit-key').value;
     const storeName = document.getElementById('edit-store').value;
 
@@ -103,7 +121,7 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
         const response = await fetch(`${API_BASE_URL}/api/users/update-profile`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ email, address, phone, key, storeName })
+            body: JSON.stringify({ email, address, phone, password, key, storeName })
         });
         if (response.ok) {
             alert('Perfil actualizado');
@@ -164,13 +182,18 @@ document.getElementById('assign-points-form').addEventListener('submit', async (
     }
 });
 
-// Descontar puntos (aliado)
+// Descontar puntos (aliado o user) con aviso
 document.getElementById('deduct-points-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('deduct-name').value;
     const points = document.getElementById('points-to-deduct').value;
     const description = document.getElementById('deduct-description').value;
-    const key = document.getElementById('user-key').value;
+    const key = document.getElementById('deduct-key').value;
+
+    if (!username || !points) {
+        alert('Completa todos los campos');
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
@@ -181,7 +204,8 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
         if (response.ok) {
             alert('Puntos descontados');
         } else {
-            alert('Error o clave incorrecta');
+            const data = await response.json();
+            alert(data.message || 'Error');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -244,7 +268,14 @@ function showProfileModal() {
     document.getElementById('edit-email').value = currentUser.email;
     document.getElementById('edit-address').value = currentUser.address || '';
     document.getElementById('edit-phone').value = currentUser.phone || '';
-    document.getElementById('edit-key').value = currentUser.key || '';
+    document.getElementById('edit-password').value = '';
+    const keyField = document.getElementById('key-field');
+    if (currentUser.role === 'user') {
+        keyField.style.display = 'block';
+        document.getElementById('edit-key').value = currentUser.key || '';
+    } else {
+        keyField.style.display = 'none';
+    }
     const storeField = document.getElementById('store-field');
     if (currentUser.role === 'aliado') {
         storeField.style.display = 'block';
@@ -302,15 +333,15 @@ async function loadMaterialsForCalc() {
         const response = await fetch(`${API_BASE_URL}/api/recycling-values`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        const materials = await response.json();
+        materialsData = await response.json(); // Guarda en variable global
         const container = document.getElementById('material-inputs');
         container.innerHTML = '';
-        materials.forEach(material => {
+        materialsData.forEach(material => {
             const div = document.createElement('div');
             div.className = 'mb-2';
             div.innerHTML = `
                 <label>${material.material} (kg)</label>
-                <input type="number" class="form-control" id="calc-${material.material}" placeholder="0">
+                <input type="number" class="form-control calc-input" id="calc-${material.material}" placeholder="0">
             `;
             container.appendChild(div);
         });
@@ -322,16 +353,11 @@ async function loadMaterialsForCalc() {
 // Calcular puntos totales de materiales
 function calculatePointsFromMaterials() {
     let totalPoints = 0;
-    const inputs = document.querySelectorAll('#material-inputs input');
-    inputs.forEach(input => {
-        const quantity = parseFloat(input.value) || 0;
-        const material = input.id.replace('calc-', '');
-        // Buscar valor del material (asumiendo que se cargó previamente)
-        const select = document.getElementById('calc-material');
-        const option = Array.from(select.options).find(opt => opt.value === material);
-        if (option) {
-            const pointsPerKg = parseFloat(option.textContent.split(' - ')[1].split(' ')[0]);
-            totalPoints += pointsPerKg * quantity;
+    materialsData.forEach(material => {
+        const input = document.getElementById(`calc-${material.material}`);
+        if (input) {
+            const quantity = parseFloat(input.value) || 0;
+            totalPoints += material.value * quantity;
         }
     });
     return totalPoints;
@@ -432,6 +458,16 @@ function filterUsersTable() {
     });
 }
 
+// Buscar usuario por nombre (gestor)
+function searchUser() {
+    const searchValue = document.getElementById('search-name').value.toLowerCase();
+    const rows = document.querySelectorAll('#users-table tbody tr');
+    rows.forEach(row => {
+        const name = row.querySelector('td').textContent.toLowerCase();
+        row.style.display = name.includes(searchValue) ? '' : 'none';
+    });
+}
+
 // Cargar tabla de usuarios para admin
 async function loadAdminUsersTable() {
     try {
@@ -480,6 +516,16 @@ function filterAdminUsersTable() {
     });
 }
 
+// Buscar usuario por nombre (admin)
+function searchAdminUser() {
+    const searchValue = document.getElementById('admin-search-name').value.toLowerCase();
+    const rows = document.querySelectorAll('#admin-users-table tbody tr');
+    rows.forEach(row => {
+        const name = row.querySelector('td').textContent.toLowerCase();
+        row.style.display = name.includes(searchValue) ? '' : 'none';
+    });
+}
+
 // Eliminar usuario (admin)
 async function deleteAdminUser(userId) {
     if (confirm('¿Eliminar este usuario?')) {
@@ -503,6 +549,10 @@ async function deleteAdminUser(userId) {
 // Toggle tabla de usuarios para admin
 function toggleUsersTable() {
     const list = document.getElementById('admin-users-list');
+    if (!list) {
+        console.error('Elemento admin-users-list no encontrado');
+        return;
+    }
     if (list.style.display === 'none') {
         list.style.display = 'block';
         loadAdminUsersTable();
@@ -530,7 +580,7 @@ async function loadRegistrationKeys() {
 
 // Actualizar clave (admin)
 async function updateKey(role) {
-    const key = document.getElementById(`key-${key.role}`).value;
+    const key = document.getElementById(`key-${role}`).value;
     try {
         const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
             method: 'PUT',
@@ -568,6 +618,7 @@ function showMainContent() {
     document.getElementById('main-content').style.display = 'block';
     document.getElementById('user-role-display').textContent = `Tipo de Usuario: ${currentUser.role}`;
     document.getElementById('user-points').textContent = currentUser.points;
+    document.getElementById('welcome-message').textContent = `Bienvenido ${currentUser.username}`;
 
     // Ocultar todas las tabs primero
     const tabs = document.querySelectorAll('#roleTabs .nav-item');
@@ -592,7 +643,8 @@ function showMainContent() {
         document.getElementById('aliado-tab').style.display = 'block';
         document.getElementById('aliado').classList.add('show', 'active');
     } else if (currentUser.role === 'admin') {
-        tabs.forEach(tab => tab.style.display = 'block'); // Admin ve todas
+        document.getElementById('gestor-tab').style.display = 'block';
+        document.getElementById('admin-tab').style.display = 'block';
         document.getElementById('admin').classList.add('show', 'active');
     }
 

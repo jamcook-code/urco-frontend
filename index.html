@@ -82,6 +82,10 @@
             </table>
         </div>
 
+        <div class="container mt-3">
+            <h2 id="welcome-message">Bienvenido</h2>
+        </div>
+
         <div class="container mt-5">
             <ul class="nav nav-tabs" id="roleTabs" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -223,6 +227,14 @@
                             <input type="password" class="form-control" id="reg-password" required>
                         </div>
                         <div class="mb-3">
+                            <label for="reg-address" class="form-label">Dirección (Opcional)</label>
+                            <input type="text" class="form-control" id="reg-address">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reg-phone" class="form-label">Teléfono (Opcional)</label>
+                            <input type="text" class="form-control" id="reg-phone">
+                        </div>
+                        <div class="mb-3">
                             <label for="reg-role" class="form-label">Rol</label>
                             <select class="form-control" id="reg-role" required>
                                 <option value="user">Beneficiario</option>
@@ -332,7 +344,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="update-values-form">
-                                                <div class="mb-3">
+                        <div class="mb-3">
                             <label for="update-material" class="form-label">Material</label>
                             <input type="text" class="form-control" id="update-material" required>
                         </div>
