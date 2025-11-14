@@ -133,7 +133,7 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
     }
 });
 
-// Actualizar valores de reciclaje
+// Actualizar valores de reciclaje (gestor/admin)
 document.getElementById('update-values-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const material = document.getElementById('update-material').value;
@@ -328,23 +328,37 @@ function logout() {
     document.getElementById('login-section').style.display = 'block';
 }
 
-// Mostrar contenido principal con vistas por rol
+// Mostrar contenido principal con vistas restringidas por rol
 function showMainContent() {
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
     document.getElementById('user-role-display').textContent = `Tipo de Usuario: ${currentUser.role}`;
     document.getElementById('user-points').textContent = currentUser.points;
 
-    // Ocultar tabs según rol
+    // Ocultar todas las tabs primero
+    const tabs = document.querySelectorAll('#roleTabs .nav-item');
+    tabs.forEach(tab => tab.style.display = 'none');
+
+    // Ocultar todos los panes de contenido
+    const panes = document.querySelectorAll('.tab-pane');
+    panes.forEach(pane => {
+        pane.classList.remove('show', 'active');
+    });
+
+    // Mostrar solo el panel correspondiente al rol
     if (currentUser.role === 'user') {
-        document.getElementById('gestor-tab').style.display = 'none';
-        document.getElementById('aliado-tab').style.display = 'none';
-        document.getElementById('admin-tab').style.display = 'none';
+        document.getElementById('beneficiario-tab').style.display = 'block';
+        document.getElementById('beneficiario').classList.add('show', 'active');
         loadPointsHistory();
+    } else if (currentUser.role === 'gestor') {
+        document.getElementById('gestor-tab').style.display = 'block';
+        document.getElementById('gestor').classList.add('show', 'active');
+    } else if (currentUser.role === 'aliado') {
+        document.getElementById('aliado-tab').style.display = 'block';
+        document.getElementById('aliado').classList.add('show', 'active');
     } else if (currentUser.role === 'admin') {
-        // Mostrar todas
-    } else {
-        document.getElementById('admin-tab').style.display = 'none';
+        tabs.forEach(tab => tab.style.display = 'block'); // Admin ve todas
+        document.getElementById('admin').classList.add('show', 'active');
     }
 }
 

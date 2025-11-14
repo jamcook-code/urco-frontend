@@ -198,7 +198,84 @@
         </div>
     </div>
 
-    <!-- Modales adicionales (recycle, updateValues, etc.) permanecen similares -->
+    <div class="modal fade" id="recycleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reciclar Material</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="recycle-form">
+                        <div class="mb-3">
+                            <label for="material" class="form-label">Material</label>
+                            <select class="form-control" id="material" required>
+                                <!-- Opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Cantidad (kg)</label>
+                            <input type="number" class="form-control" id="quantity" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">Reciclar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="redeemModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Canjear Puntos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Puntos disponibles: <span id="redeem-points"></span></p>
+                    <button class="btn btn-info">Canjear por Recompensa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="updateValuesModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Actualizar Valores de Reciclaje</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="update-values-form">
+                        <div class="mb-3">
+                            <label for="update-material" class="form-label">Material</label>
+                            <input type="text" class="form-control" id="update-material" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-points" class="form-label">Puntos por kg</label>
+                            <input type="number" class="form-control" id="update-points" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="userManagementModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gestión de Usuarios</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Lista de usuarios aquí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer class="bg-dark text-white text-center py-3">
         <p>&copy; 2023 URCO. Todos los derechos reservados.</p>
