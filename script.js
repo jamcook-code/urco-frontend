@@ -624,8 +624,6 @@ function showMainContent() {
         return;
     }
     console.log('showMainContent ejecutado, rol:', currentUser.role);
-    document.getElementById('login-section').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
     document.getElementById('user-role-display').textContent = `Tipo de Usuario: ${currentUser.role}`;
     document.getElementById('user-points').textContent = currentUser.points;
     document.getElementById('welcome-message').textContent = `Bienvenido ${currentUser.username}`;
