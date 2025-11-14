@@ -8,6 +8,20 @@ document.getElementById('reg-role').addEventListener('change', (e) => {
     keyField.style.display = e.target.value !== 'user' ? 'block' : 'none';
 });
 
+// Evento para cambiar modo de asignación en gestor
+document.getElementById('assign-mode').addEventListener('change', (e) => {
+    const manual = document.getElementById('manual-fields');
+    const calculate = document.getElementById('calculate-fields');
+    if (e.target.value === 'manual') {
+        manual.style.display = 'block';
+        calculate.style.display = 'none';
+    } else {
+        manual.style.display = 'none';
+        calculate.style.display = 'block';
+        loadMaterialsForCalc();
+    }
+});
+
 // Login
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -87,20 +101,34 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
     }
 });
 
-// Asignar puntos (gestor)
+// Asignar puntos (gestor/admin) con modo manual/calculado y descripción
 document.getElementById('assign-points-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('user-email').value;
-    const points = document.getElementById('points-to-add').value;
+    const mode = document.getElementById('assign-mode').value;
+    const description = document.getElementById('assign-description').value;
+    let email, points;
+
+    if (mode === 'manual') {
+        email = document.getElementById('user-email').value;
+        points = document.getElementById('points-to-add').value;
+    } else {
+        email = document.getElementById('calc-user-email').value;
+        const material = document.getElementById('calc-material').value;
+        const quantity = document.getElementById('calc-quantity').value;
+        const select = document.getElementById('calc-material');
+        const selectedOption = select.options[select.selectedIndex];
+        const pointsPerKg = parseFloat(selectedOption.textContent.split(' - ')[1].split(' ')[0]);
+        points = pointsPerKg * quantity;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/add-points`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ email, points })
+            body: JSON.stringify({ email, points, description })
         });
         if (response.ok) {
-            alert('Puntos asignados');
+            alert(`Puntos asignados: ${points}. Descripción: ${description}`);
         } else {
             alert('Error');
         }
@@ -154,6 +182,7 @@ document.getElementById('update-values-form').addEventListener('submit', async (
         if (response.ok) {
             alert('Valores actualizados exitosamente');
             bootstrap.Modal.getInstance(document.getElementById('updateValuesModal')).hide();
+            loadRecyclingValuesTable(); // Recarga tabla
         } else {
             alert(data.message);
         }
@@ -230,6 +259,54 @@ async function loadMaterials() {
     } catch (error) {
         console.error('Error loading materials:', error);
     }
+}
+
+// Cargar materiales para cálculo en asignación
+async function loadMaterialsForCalc() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/recycling-values`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const materials = await response.json();
+        const select = document.getElementById('calc-material');
+        select.innerHTML = '';
+        materials.forEach(material => {
+            const option = document.createElement('option');
+            option.value = material.material;
+            option.textContent = `${material.material} - ${material.value} puntos/kg`;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading materials for calc:', error);
+    }
+}
+
+// Cargar tabla global de valores de reciclaje
+async function loadRecyclingValuesTable() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/recycling-values`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const values = await response.json();
+        const tbody = document.querySelector('#recycling-values-table tbody');
+        tbody.innerHTML = '';
+        values.forEach(value => {
+            const actions = (currentUser.role === 'gestor' || currentUser.role === 'admin') 
+                ? `<button onclick="editValue('${value._id}', '${value.material}', ${value.value})">Editar</button>` 
+                : '';
+            const row = `<tr><td>${value.material}</td><td>${value.value}</td><td>${actions}</td></tr>`;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('Error loading values:', error);
+    }
+}
+
+// Editar valor (abre modal con datos pre-llenados)
+function editValue(id, material, value) {
+    document.getElementById('update-material').value = material;
+    document.getElementById('update-points').value = value;
+    showUpdateValuesModal();
 }
 
 // Cargar usuarios (admin)
@@ -360,6 +437,9 @@ function showMainContent() {
         tabs.forEach(tab => tab.style.display = 'block'); // Admin ve todas
         document.getElementById('admin').classList.add('show', 'active');
     }
+
+    // Cargar tabla global para todos
+    loadRecyclingValuesTable();
 }
 
 // Cargar historial de puntos (beneficiario)
