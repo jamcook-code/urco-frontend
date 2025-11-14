@@ -22,6 +22,22 @@ document.getElementById('assign-mode').addEventListener('change', (e) => {
     }
 });
 
+// Eventos para filtros en tabla de usuarios (gestor)
+document.getElementById('filter-name').addEventListener('input', filterUsersTable);
+document.getElementById('filter-email').addEventListener('input', filterUsersTable);
+document.getElementById('filter-address').addEventListener('input', filterUsersTable);
+document.getElementById('filter-phone').addEventListener('input', filterUsersTable);
+document.getElementById('filter-role').addEventListener('change', filterUsersTable);
+document.getElementById('filter-points').addEventListener('input', filterUsersTable);
+
+// Eventos para filtros en tabla de usuarios (admin)
+document.getElementById('admin-filter-name').addEventListener('input', filterAdminUsersTable);
+document.getElementById('admin-filter-email').addEventListener('input', filterAdminUsersTable);
+document.getElementById('admin-filter-address').addEventListener('input', filterAdminUsersTable);
+document.getElementById('admin-filter-phone').addEventListener('input', filterAdminUsersTable);
+document.getElementById('admin-filter-role').addEventListener('change', filterAdminUsersTable);
+document.getElementById('admin-filter-points').addEventListener('input', filterAdminUsersTable);
+
 // Login
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -74,24 +90,28 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     }
 });
 
-// Perfil editable
+// Perfil editable con dirección, teléfono, tienda
 document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = document.getElementById('edit-name').value;
     const email = document.getElementById('edit-email').value;
+    const address = document.getElementById('edit-address').value;
+    const phone = document.getElementById('edit-phone').value;
     const key = document.getElementById('edit-key').value;
+    const storeName = document.getElementById('edit-store').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/update-profile`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ username, email, key })
+            body: JSON.stringify({ email, address, phone, key, storeName })
         });
         if (response.ok) {
             alert('Perfil actualizado');
-            currentUser.username = username;
             currentUser.email = email;
+            currentUser.address = address;
+            currentUser.phone = phone;
             currentUser.key = key;
+            currentUser.storeName = storeName;
             bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
         } else {
             alert('Error al actualizar');
@@ -106,33 +126,33 @@ document.getElementById('assign-points-form').addEventListener('submit', async (
     e.preventDefault();
     const mode = document.getElementById('assign-mode').value;
     const description = document.getElementById('assign-description').value;
-    let email, points;
+    let username, points;
 
     if (mode === 'manual') {
-        email = document.getElementById('user-email').value;
+        username = document.getElementById('user-name').value;
         points = document.getElementById('points-to-add').value;
-        if (!email || !points) {
+        if (!username || !points) {
             alert('Completa todos los campos');
             return;
         }
     } else {
-        email = document.getElementById('calc-user-email').value;
-        const quantity = document.getElementById('calc-quantity').value;
-        if (!email || !quantity) {
-            alert('Completa todos los campos');
+        username = document.getElementById('calc-user-name').value;
+        if (!username) {
+            alert('Completa el nombre del beneficiario');
             return;
         }
-        const select = document.getElementById('calc-material');
-        const selectedOption = select.options[select.selectedIndex];
-        const pointsPerKg = parseFloat(selectedOption.textContent.split(' - ')[1].split(' ')[0]);
-        points = pointsPerKg * quantity;
+        points = calculatePointsFromMaterials();
+        if (points === 0) {
+            alert('Ingresa al menos un material con cantidad');
+            return;
+        }
     }
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/add-points`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ email, points, description })
+            body: JSON.stringify({ username, points, description })
         });
         if (response.ok) {
             alert(`Puntos asignados: ${points}. Descripción: ${description}`);
@@ -147,7 +167,7 @@ document.getElementById('assign-points-form').addEventListener('submit', async (
 // Descontar puntos (aliado)
 document.getElementById('deduct-points-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('deduct-email').value;
+    const username = document.getElementById('deduct-name').value;
     const points = document.getElementById('points-to-deduct').value;
     const description = document.getElementById('deduct-description').value;
     const key = document.getElementById('user-key').value;
@@ -156,7 +176,7 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
         const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ email, points, description, key })
+            body: JSON.stringify({ username, points, description, key })
         });
         if (response.ok) {
             alert('Puntos descontados');
@@ -221,9 +241,17 @@ function showRegisterModal() {
 }
 
 function showProfileModal() {
-    document.getElementById('edit-name').value = currentUser.username || '';
     document.getElementById('edit-email').value = currentUser.email;
+    document.getElementById('edit-address').value = currentUser.address || '';
+    document.getElementById('edit-phone').value = currentUser.phone || '';
     document.getElementById('edit-key').value = currentUser.key || '';
+    const storeField = document.getElementById('store-field');
+    if (currentUser.role === 'aliado') {
+        storeField.style.display = 'block';
+        document.getElementById('edit-store').value = currentUser.storeName || '';
+    } else {
+        storeField.style.display = 'none';
+    }
     new bootstrap.Modal(document.getElementById('profileModal')).show();
 }
 
@@ -275,17 +303,38 @@ async function loadMaterialsForCalc() {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const materials = await response.json();
-        const select = document.getElementById('calc-material');
-        select.innerHTML = '';
+        const container = document.getElementById('material-inputs');
+        container.innerHTML = '';
         materials.forEach(material => {
-            const option = document.createElement('option');
-            option.value = material.material;
-            option.textContent = `${material.material} - ${material.value} puntos/kg`;
-            select.appendChild(option);
+            const div = document.createElement('div');
+            div.className = 'mb-2';
+            div.innerHTML = `
+                <label>${material.material} (kg)</label>
+                <input type="number" class="form-control" id="calc-${material.material}" placeholder="0">
+            `;
+            container.appendChild(div);
         });
     } catch (error) {
         console.error('Error loading materials for calc:', error);
     }
+}
+
+// Calcular puntos totales de materiales
+function calculatePointsFromMaterials() {
+    let totalPoints = 0;
+    const inputs = document.querySelectorAll('#material-inputs input');
+    inputs.forEach(input => {
+        const quantity = parseFloat(input.value) || 0;
+        const material = input.id.replace('calc-', '');
+        // Buscar valor del material (asumiendo que se cargó previamente)
+        const select = document.getElementById('calc-material');
+        const option = Array.from(select.options).find(opt => opt.value === material);
+        if (option) {
+            const pointsPerKg = parseFloat(option.textContent.split(' - ')[1].split(' ')[0]);
+            totalPoints += pointsPerKg * quantity;
+        }
+    });
+    return totalPoints;
 }
 
 // Cargar tabla global de valores de reciclaje
@@ -336,7 +385,7 @@ async function deleteValue(id) {
     }
 }
 
-// Cargar tabla de usuarios (gestor/admin)
+// Cargar tabla de usuarios para gestor/admin
 async function loadUsersTable() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/users`, {
@@ -346,7 +395,7 @@ async function loadUsersTable() {
         const tbody = document.querySelector('#users-table tbody');
         tbody.innerHTML = '';
         users.forEach(user => {
-            const row = `<tr><td>${user.username}</td><td>${user.email}</td><td>${user.role}</td><td>${user.points}</td></tr>`;
+            const row = `<tr><td>${user.username}</td><td>${user.email}</td><td>${user.address || ''}</td><td>${user.phone || ''}</td><td>${user.role}</td><td>${user.points}</td></tr>`;
             tbody.innerHTML += row;
         });
     } catch (error) {
@@ -354,49 +403,112 @@ async function loadUsersTable() {
     }
 }
 
-// Cargar usuarios (admin)
-async function loadUsers() {
+// Filtrar tabla de usuarios (gestor)
+function filterUsersTable() {
+    const nameFilter = document.getElementById('filter-name').value.toLowerCase();
+    const emailFilter = document.getElementById('filter-email').value.toLowerCase();
+    const addressFilter = document.getElementById('filter-address').value.toLowerCase();
+    const phoneFilter = document.getElementById('filter-phone').value.toLowerCase();
+    const roleFilter = document.getElementById('filter-role').value;
+    const pointsFilter = document.getElementById('filter-points').value;
+
+    const rows = document.querySelectorAll('#users-table tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const name = cells[0].textContent.toLowerCase();
+        const email = cells[1].textContent.toLowerCase();
+        const address = cells[2].textContent.toLowerCase();
+        const phone = cells[3].textContent.toLowerCase();
+        const role = cells[4].textContent;
+        const points = cells[5].textContent;
+
+        const matches = (!nameFilter || name.includes(nameFilter)) &&
+                        (!emailFilter || email.includes(emailFilter)) &&
+                        (!addressFilter || address.includes(addressFilter)) &&
+                        (!phoneFilter || phone.includes(phoneFilter)) &&
+                        (!roleFilter || role === roleFilter) &&
+                        (!pointsFilter || points === pointsFilter);
+        row.style.display = matches ? '' : 'none';
+    });
+}
+
+// Cargar tabla de usuarios para admin
+async function loadAdminUsersTable() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/users`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const users = await response.json();
-        const list = document.getElementById('users-list');
-        list.innerHTML = '<h4>Usuarios Registrados</h4><button onclick="exportUsers()">Exportar a Excel</button>';
+        const tbody = document.querySelector('#admin-users-table tbody');
+        tbody.innerHTML = '';
         users.forEach(user => {
-            list.innerHTML += `<p>${user.username} - ${user.email} - ${user.role} - Puntos: ${user.points} <button onclick="deleteUser('${user._id}')">Eliminar</button></p>`;
+            const actions = (currentUser.role === 'admin') ? `<button onclick="deleteAdminUser('${user._id}')">Eliminar</button>` : '';
+            const row = `<tr><td>${user.username}</td><td>${user.email}</td><td>${user.address || ''}</td><td>${user.phone || ''}</td><td>${user.role}</td><td>${user.points}</td><td>${actions}</td></tr>`;
+            tbody.innerHTML += row;
         });
     } catch (error) {
-        console.error('Error loading users:', error);
+        console.error('Error loading admin users table:', error);
     }
+}
+
+// Filtrar tabla de usuarios (admin)
+function filterAdminUsersTable() {
+    const nameFilter = document.getElementById('admin-filter-name').value.toLowerCase();
+    const emailFilter = document.getElementById('admin-filter-email').value.toLowerCase();
+    const addressFilter = document.getElementById('admin-filter-address').value.toLowerCase();
+    const phoneFilter = document.getElementById('admin-filter-phone').value.toLowerCase();
+    const roleFilter = document.getElementById('admin-filter-role').value;
+    const pointsFilter = document.getElementById('admin-filter-points').value;
+
+    const rows = document.querySelectorAll('#admin-users-table tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const name = cells[0].textContent.toLowerCase();
+        const email = cells[1].textContent.toLowerCase();
+        const address = cells[2].textContent.toLowerCase();
+        const phone = cells[3].textContent.toLowerCase();
+        const role = cells[4].textContent;
+        const points = cells[5].textContent;
+
+        const matches = (!nameFilter || name.includes(nameFilter)) &&
+                        (!emailFilter || email.includes(emailFilter)) &&
+                        (!addressFilter || address.includes(addressFilter)) &&
+                        (!phoneFilter || phone.includes(phoneFilter)) &&
+                        (!roleFilter || role === roleFilter) &&
+                        (!pointsFilter || points === pointsFilter);
+        row.style.display = matches ? '' : 'none';
+    });
 }
 
 // Eliminar usuario (admin)
-async function deleteUser(userId) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (response.ok) {
-            alert('Usuario eliminado');
-            loadUsers();
-        } else {
-            alert('Error al eliminar');
+async function deleteAdminUser(userId) {
+    if (confirm('¿Eliminar este usuario?')) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                alert('Usuario eliminado');
+                loadAdminUsersTable();
+            } else {
+                alert('Error al eliminar');
+            }
+        } catch (error) {
+            console.error('Error:', error);
         }
-    } catch (error) {
-        console.error('Error:', error);
     }
 }
 
-// Exportar usuarios a Excel (admin)
-function exportUsers() {
-    const data = [['Nombre', 'Email', 'Rol', 'Puntos']];
-    // Aquí agregarías los datos reales de usuarios
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
-    XLSX.writeFile(wb, 'usuarios.xlsx');
+// Toggle tabla de usuarios para admin
+function toggleUsersTable() {
+    const list = document.getElementById('admin-users-list');
+    if (list.style.display === 'none') {
+        list.style.display = 'block';
+        loadAdminUsersTable();
+    } else {
+        list.style.display = 'none';
+    }
 }
 
 // Cargar claves de registro (admin)
@@ -418,7 +530,7 @@ async function loadRegistrationKeys() {
 
 // Actualizar clave (admin)
 async function updateKey(role) {
-    const key = document.getElementById(`key-${role}`).value;
+    const key = document.getElementById(`key-${key.role}`).value;
     try {
         const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
             method: 'PUT',
@@ -467,26 +579,25 @@ function showMainContent() {
         pane.classList.remove('show', 'active');
     });
 
- // Mostrar solo el panel correspondiente al rol
-if (currentUser.role === 'user') {
-    document.getElementById('beneficiario-tab').style.display = 'block';
-    document.getElementById('beneficiario').classList.add('show', 'active');
-    loadPointsHistory();
-} else if (currentUser.role === 'gestor') {
-    document.getElementById('gestor-tab').style.display = 'block';
-    document.getElementById('gestor').classList.add('show', 'active');
-    loadUsersTable(); // Cargar tabla de usuarios para gestor
-} else if (currentUser.role === 'aliado') {
-    document.getElementById('aliado-tab').style.display = 'block';
-    document.getElementById('aliado').classList.add('show', 'active');
-} else if (currentUser.role === 'admin') {
-    tabs.forEach(tab => tab.style.display = 'block'); // Admin ve todas
-    document.getElementById('admin').classList.add('show', 'active');
-    loadUsersTable(); // Cargar tabla de usuarios para admin
-}
+    // Mostrar solo el panel correspondiente al rol
+    if (currentUser.role === 'user') {
+        document.getElementById('beneficiario-tab').style.display = 'block';
+        document.getElementById('beneficiario').classList.add('show', 'active');
+        loadPointsHistory();
+    } else if (currentUser.role === 'gestor') {
+        document.getElementById('gestor-tab').style.display = 'block';
+        document.getElementById('gestor').classList.add('show', 'active');
+        loadUsersTable();
+    } else if (currentUser.role === 'aliado') {
+        document.getElementById('aliado-tab').style.display = 'block';
+        document.getElementById('aliado').classList.add('show', 'active');
+    } else if (currentUser.role === 'admin') {
+        tabs.forEach(tab => tab.style.display = 'block'); // Admin ve todas
+        document.getElementById('admin').classList.add('show', 'active');
+    }
 
-// Cargar tabla global para todos
-loadRecyclingValuesTable();
+    // Cargar tabla global para todos
+    loadRecyclingValuesTable();
 }
 
 // Cargar historial de puntos (beneficiario)
@@ -499,29 +610,12 @@ async function loadPointsHistory() {
         const tbody = document.querySelector('#points-history tbody');
         tbody.innerHTML = '';
         history.forEach(entry => {
-            const row = `<tr><td>${entry.date}</td><td>${entry.type}</td><td>${entry.points}</td><td>${entry.description}</td></tr>`;
+            const date = new Date(entry.date).toLocaleDateString('es-ES'); // Día/mes/año
+            const row = `<tr><td>${date}</td><td>${entry.type}</td><td>${entry.points}</td><td>${entry.description}</td><td>${entry.performedBy || ''}</td><td>${entry.storeName || ''}</td></tr>`;
             tbody.innerHTML += row;
         });
     } catch (error) {
         console.error('Error loading history:', error);
-    }
-}
-
-// Cargar tabla de usuarios para gestor/admin
-async function loadUsersTable() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/users`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const users = await response.json();
-        const tbody = document.querySelector('#users-table tbody');
-        tbody.innerHTML = '';
-        users.forEach(user => {
-            const row = `<tr><td>${user.username}</td><td>${user.email}</td><td>${user.role}</td><td>${user.points}</td></tr>`;
-            tbody.innerHTML += row;
-        });
-    } catch (error) {
-        console.error('Error loading users table:', error);
     }
 }
 

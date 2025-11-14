@@ -102,7 +102,7 @@
                     <h3>Panel de Beneficiario</h3>
                     <p>Puntos acumulados: <span id="user-points">0</span></p>
                     <table id="points-history" class="table">
-                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Puntos</th><th>Descripción</th></tr></thead>
+                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Puntos</th><th>Descripción</th><th>Realizado Por</th><th>Tienda</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -119,27 +119,41 @@
                             </select>
                         </div>
                         <div id="manual-fields">
-                            <input type="email" id="user-email" placeholder="Email del beneficiario" class="form-control mb-2" required>
+                            <input type="text" id="user-name" placeholder="Nombre del beneficiario" class="form-control mb-2" required>
                             <input type="number" id="points-to-add" placeholder="Puntos a agregar" class="form-control mb-2" required>
                         </div>
                         <div id="calculate-fields" style="display: none;">
-                            <input type="email" id="calc-user-email" placeholder="Email del beneficiario" class="form-control mb-2">
-                            <select id="calc-material" class="form-control mb-2"></select>
-                            <input type="number" id="calc-quantity" placeholder="Cantidad (kg)" class="form-control mb-2">
+                            <input type="text" id="calc-user-name" placeholder="Nombre del beneficiario" class="form-control mb-2" required>
+                            <div id="material-inputs"></div>
+                            <button type="button" onclick="addMaterialInput()">Agregar Material</button>
                         </div>
-                        <input type="text" id="assign-description" placeholder="Descripción (ej. Reciclaje de plástico)" class="form-control mb-2" required>
+                        <input type="text" id="assign-description" placeholder="Descripción" class="form-control mb-2" required>
                         <button type="submit" class="btn btn-success">Asignar Puntos</button>
                     </form>
                     <h4>Usuarios Registrados</h4>
+                    <div class="mb-3">
+                        <input type="text" id="filter-name" placeholder="Filtrar por nombre" class="form-control mb-2">
+                        <input type="text" id="filter-email" placeholder="Filtrar por email" class="form-control mb-2">
+                        <input type="text" id="filter-address" placeholder="Filtrar por dirección" class="form-control mb-2">
+                        <input type="text" id="filter-phone" placeholder="Filtrar por teléfono" class="form-control mb-2">
+                        <select id="filter-role" class="form-control mb-2">
+                            <option value="">Filtrar por rol</option>
+                            <option value="user">Beneficiario</option>
+                            <option value="gestor">Gestor</option>
+                            <option value="aliado">Aliado</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <input type="number" id="filter-points" placeholder="Filtrar por puntos" class="form-control mb-2">
+                    </div>
                     <table id="users-table" class="table">
-                        <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Puntos</th></tr></thead>
+                        <thead><tr><th>Nombre</th><th>Email</th><th>Dirección</th><th>Teléfono</th><th>Rol</th><th>Puntos</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
                 <div class="tab-pane fade" id="aliado" role="tabpanel">
                     <h3>Panel de Aliado</h3>
                     <form id="deduct-points-form">
-                        <input type="email" id="deduct-email" placeholder="Email del beneficiario" class="form-control mb-2" required>
+                        <input type="text" id="deduct-name" placeholder="Nombre del beneficiario" class="form-control mb-2" required>
                         <input type="number" id="points-to-deduct" placeholder="Puntos a descontar" class="form-control mb-2" required>
                         <input type="text" id="deduct-description" placeholder="Descripción" class="form-control mb-2" required>
                         <input type="password" id="user-key" placeholder="Clave del beneficiario" class="form-control mb-2" required>
@@ -148,8 +162,27 @@
                 </div>
                 <div class="tab-pane fade" id="admin" role="tabpanel">
                     <h3>Panel de Administrador</h3>
-                    <button class="btn btn-danger" onclick="loadUsers()">Ver Usuarios</button>
-                    <div id="users-list" class="mt-3"></div>
+                    <button class="btn btn-danger" id="toggle-users-btn" onclick="toggleUsersTable()">Ver Usuarios</button>
+                    <div id="users-list" class="mt-3" style="display: none;">
+                        <div class="mb-3">
+                            <input type="text" id="admin-filter-name" placeholder="Filtrar por nombre" class="form-control mb-2">
+                            <input type="text" id="admin-filter-email" placeholder="Filtrar por email" class="form-control mb-2">
+                            <input type="text" id="admin-filter-address" placeholder="Filtrar por dirección" class="form-control mb-2">
+                            <input type="text" id="admin-filter-phone" placeholder="Filtrar por teléfono" class="form-control mb-2">
+                            <select id="admin-filter-role" class="form-control mb-2">
+                                <option value="">Filtrar por rol</option>
+                                <option value="user">Beneficiario</option>
+                                <option value="gestor">Gestor</option>
+                                <option value="aliado">Aliado</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <input type="number" id="admin-filter-points" placeholder="Filtrar por puntos" class="form-control mb-2">
+                        </div>
+                        <table id="admin-users-table" class="table">
+                            <thead><tr><th>Nombre</th><th>Email</th><th>Dirección</th><th>Teléfono</th><th>Rol</th><th>Puntos</th><th>Acciones</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                     <button class="btn btn-info mt-3" onclick="loadRegistrationKeys()">Gestionar Claves de Registro</button>
                     <div id="keys-list" class="mt-3"></div>
                 </div>
@@ -209,16 +242,24 @@
                 <div class="modal-body">
                     <form id="profile-form">
                         <div class="mb-3">
-                            <label>Nombre</label>
-                            <input type="text" id="edit-name" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
                             <label>Email</label>
                             <input type="email" id="edit-email" class="form-control" required>
                         </div>
                         <div class="mb-3">
+                            <label>Dirección</label>
+                            <input type="text" id="edit-address" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label>Teléfono</label>
+                            <input type="text" id="edit-phone" class="form-control">
+                        </div>
+                        <div class="mb-3">
                             <label>Clave Personal</label>
                             <input type="password" id="edit-key" class="form-control">
+                        </div>
+                        <div class="mb-3" id="store-field" style="display: none;">
+                            <label>Nombre de Tienda</label>
+                            <input type="text" id="edit-store" class="form-control">
                         </div>
                         <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                     </form>
@@ -279,11 +320,7 @@
                     <form id="update-values-form">
                         <div class="mb-3">
                             <label for="update-material" class="form-label">Material</label>
-                            <input type="text" class="form-control" id="update-material" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="update-points" class="form-label">Puntos por kg</label>
-                            <input type="number" class="form-control" id="update-points" required>
+                                                        <input type="number" class="form-control" id="update-points" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Actualizar</button>
                     </form>
@@ -305,10 +342,6 @@
             </div>
         </div>
     </div>
-
-    <footer class="bg-dark text-white text-center py-3">
-        <p>&copy; 2023 URCO. Todos los derechos reservados.</p>
-    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

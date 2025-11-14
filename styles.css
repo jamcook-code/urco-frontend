@@ -88,12 +88,8 @@ body {
     border-color: #bd2130;
 }
 
-footer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    font-size: 0.8em; /* Más pequeño */
-    padding: 5px 0; /* Padding reducido */
-    height: auto; /* Altura automática */
-    background-color: #f8f9fa; /* Fondo visible */
+/* Puntos acumulados agrandados */
+#user-points {
+    font-size: 1.5em;
+    font-weight: bold;
 }
