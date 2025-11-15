@@ -581,16 +581,24 @@ function toggleUsersTable() {
 
 // Cargar claves de registro (admin)
 async function loadRegistrationKeys() {
+    console.log('loadRegistrationKeys ejecutado');
     try {
         const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
+        console.log('Response status:', response.status);
         const keys = await response.json();
+        console.log('Keys received:', keys);
         const list = document.getElementById('keys-list');
+        if (!list) {
+            console.error('Elemento keys-list no encontrado');
+            return;
+        }
         list.innerHTML = '<h4>Claves de Registro</h4>';
         keys.forEach(key => {
             list.innerHTML += `<p>${key.role}: <input type="password" id="key-${key.role}" value="${key.key}"> <button onclick="updateKey('${key.role}')">Actualizar</button></p>`;
         });
+        console.log('Keys list updated');
     } catch (error) {
         console.error('Error loading keys:', error);
     }
