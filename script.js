@@ -3,6 +3,18 @@ const API_BASE_URL = 'https://urco-backend.vercel.app'; // URL del backend
 let currentUser = null;
 let materialsData = []; // Variable global para materiales en calculadora
 
+// Función para decodificar token JWT (payload solo, sin verificar firma)
+function decodeToken(token) {
+    try {
+        const payload = token.split('.')[1];
+        const decoded = JSON.parse(atob(payload));
+        return decoded;
+    } catch (error) {
+        console.error('Error decodificando token:', error);
+        return null;
+    }
+}
+
 // Evento para mostrar/ocultar campo de clave en registro
 document.getElementById('reg-role').addEventListener('change', (e) => {
     const keyField = document.getElementById('key-field');
@@ -447,7 +459,14 @@ function filterUsersTable() {
     const rows = document.querySelectorAll('#users-table tbody tr');
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-                const matches = (!nameFilter || name.includes(nameFilter)) &&
+        const name = cells[0].textContent.toLowerCase();
+        const email = cells[1].textContent.toLowerCase();
+        const address = cells[2].textContent.toLowerCase();
+        const phone = cells[3].textContent.toLowerCase();
+        const role = cells[4].textContent;
+        const points = cells[5].textContent;
+
+        const matches = (!nameFilter || name.includes(nameFilter)) &&
                         (!emailFilter || email.includes(emailFilter)) &&
                         (!addressFilter || address.includes(addressFilter)) &&
                         (!phoneFilter || phone.includes(phoneFilter)) &&
@@ -684,6 +703,12 @@ window.onload = () => {
     const token = localStorage.getItem('token');
     console.log('Token en onload:', token);
     if (token) {
-        showMainContent();
+        const decoded = decodeToken(token);
+        if (decoded) {
+            currentUser = { _id: decoded._id, role: decoded.role, email: decoded.email }; // Setear básico desde token
+            showMainContent();
+        } else {
+            logout();
+        }
     }
 };
