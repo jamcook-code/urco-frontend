@@ -613,6 +613,10 @@ function logout() {
 
 // Mostrar contenido principal con vistas restringidas por rol
 function showMainContent() {
+    console.log('Antes de ocultar login');
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    console.log('Después de mostrar main-content');
     if (!currentUser) {
         console.log('currentUser es null, redirigiendo a login');
         logout();
