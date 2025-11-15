@@ -185,16 +185,20 @@ document.getElementById('assign-points-form').addEventListener('submit', async (
         }
     }
 
+    console.log('Enviando request: username:', username, 'points:', points, 'description:', description);
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/add-points`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify({ username, points, description })
         });
+        console.log('Response status:', response.status);
         if (response.ok) {
             alert(`Puntos asignados: ${points}. Descripción: ${description}`);
         } else {
-            alert('Error');
+            const data = await response.json();
+            console.log('Error response:', data);
+            alert('Error: ' + (data.message || 'Desconocido'));
         }
     } catch (error) {
         console.error('Error:', error);
