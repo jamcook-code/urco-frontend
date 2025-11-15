@@ -666,6 +666,15 @@ function showMainContent() {
         logout();
         return;
     }
+
+    // Cambiar placeholder del campo deduct-key según rol
+    const deductKeyField = document.getElementById('deduct-key');
+    if (currentUser.role === 'aliado') {
+        deductKeyField.placeholder = 'Clave del beneficiario';
+    } else if (currentUser.role === 'user') {
+        deductKeyField.placeholder = 'Contraseña del beneficiario';
+    }
+
     console.log('showMainContent ejecutado, rol:', currentUser.role);
     console.log('showMainContent ejecutado, currentUser:', currentUser);
     document.getElementById('user-role-display').textContent = `Tipo de Usuario: ${currentUser.role}`;
@@ -703,7 +712,6 @@ function showMainContent() {
     // Cargar tabla global para todos
     loadRecyclingValuesTable();
 }
-
 // Cargar historial de puntos (beneficiario)
 async function loadPointsHistory() {
     try {
