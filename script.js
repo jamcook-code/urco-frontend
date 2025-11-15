@@ -156,24 +156,29 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
 // Asignar puntos (gestor/admin) con modo manual/calculado y descripción
 document.getElementById('assign-points-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('Formulario enviado');
     const mode = document.getElementById('assign-mode').value;
+    console.log('Modo:', mode);
     const description = document.getElementById('assign-description').value;
     let username, points;
 
     if (mode === 'manual') {
         username = document.getElementById('user-name').value;
         points = document.getElementById('points-to-add').value;
+        console.log('Manual: username:', username, 'points:', points);
         if (!username || !points) {
             alert('Completa todos los campos');
             return;
         }
     } else {
         username = document.getElementById('calc-user-name').value;
+        console.log('Calculate: username:', username);
         if (!username) {
             alert('Completa el nombre del beneficiario');
             return;
         }
         points = calculatePointsFromMaterials();
+        console.log('Puntos calculados:', points);
         if (points === 0) {
             alert('Ingresa al menos un material con cantidad');
             return;
