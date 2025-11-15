@@ -211,7 +211,7 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
     const username = document.getElementById('deduct-name').value;
     const points = document.getElementById('points-to-deduct').value;
     const description = document.getElementById('deduct-description').value;
-    const key = document.getElementById('deduct-key').value;
+    const password = document.getElementById('deduct-key').value; // Cambiado a password
 
     if (!username || !points) {
         alert('Completa todos los campos');
@@ -222,7 +222,7 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
         const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ username, points, description, key })
+            body: JSON.stringify({ username, points, description, password }) // Cambiado a password
         });
         if (response.ok) {
             alert('Puntos descontados');
