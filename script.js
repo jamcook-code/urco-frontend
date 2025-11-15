@@ -226,6 +226,8 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
         body.password = keyOrPassword; // Para user, enviar password
     }
 
+    console.log('Enviando deduct-points:', body);
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
             method: 'POST',
