@@ -211,18 +211,26 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
     const username = document.getElementById('deduct-name').value;
     const points = document.getElementById('points-to-deduct').value;
     const description = document.getElementById('deduct-description').value;
-    const password = document.getElementById('deduct-key').value; // Cambiado a password
+    const keyOrPassword = document.getElementById('deduct-key').value;
 
     if (!username || !points) {
         alert('Completa todos los campos');
         return;
     }
 
+    // Enviar el campo correcto según el rol
+    const body = { username, points, description };
+    if (currentUser.role === 'aliado') {
+        body.key = keyOrPassword; // Para aliado, enviar key
+    } else if (currentUser.role === 'user') {
+        body.password = keyOrPassword; // Para user, enviar password
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ username, points, description, password }) // Cambiado a password
+            body: JSON.stringify(body)
         });
         if (response.ok) {
             alert('Puntos descontados');
@@ -615,7 +623,7 @@ async function loadRegistrationKeys() {
 
 // Actualizar clave (admin)
 async function updateKey(role) {
-    const key = document.getElementById(`key-${role}`).value;
+    const key = document.getElementById(`key-${key.role}`).value;
     try {
         const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
             method: 'PUT',
