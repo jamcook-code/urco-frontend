@@ -208,16 +208,19 @@ document.getElementById('assign-points-form').addEventListener('submit', async (
 // Descontar puntos (aliado o user) con aviso
 document.getElementById('deduct-points-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('Inicio de deduct-points-form'); // Log 1: Ver si entra al evento
     const username = document.getElementById('deduct-name').value;
     const points = document.getElementById('points-to-deduct').value;
     const description = document.getElementById('deduct-description').value;
     const keyOrPassword = document.getElementById('deduct-key').value;
 
+    console.log('Valores obtenidos:', { username, points, description, keyOrPassword }); // Log 2: Ver valores
     if (!username || !points) {
         alert('Completa todos los campos');
         return;
     }
 
+    console.log('Antes de definir body'); // Log 3: Antes de definir body
     // Enviar el campo correcto según el rol
     const body = { username, points, description };
     if (currentUser.role === 'aliado') {
@@ -226,7 +229,8 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
         body.password = keyOrPassword; // Para user, enviar password
     }
 
-    console.log('Enviando deduct-points:', body);
+    console.log('Enviando deduct-points:', body); // Log 4: El que ya tienes
+    console.log('Antes del fetch'); // Log 5: Antes del fetch
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
@@ -234,6 +238,7 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify(body)
         });
+        console.log('Después del fetch, response status:', response.status); // Log 6: Después del fetch
         if (response.ok) {
             alert('Puntos descontados');
         } else {
@@ -244,6 +249,7 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
         console.error('Error:', error);
     }
 });
+
 
 // Actualizar valores de reciclaje (gestor/admin)
 document.getElementById('update-values-form').addEventListener('submit', async (e) => {
