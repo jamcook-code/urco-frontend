@@ -69,6 +69,8 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         if (response.ok) {
             localStorage.setItem('token', data.token);
             currentUser = data.user || { email, points: 0, role: 'user' };
+            console.log('Login success, user:', data.user);
+            console.log('currentUser set to:', currentUser);
             showMainContent();
         } else {
             alert(data.message);
@@ -445,14 +447,7 @@ function filterUsersTable() {
     const rows = document.querySelectorAll('#users-table tbody tr');
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        const name = cells[0].textContent.toLowerCase();
-        const email = cells[1].textContent.toLowerCase();
-        const address = cells[2].textContent.toLowerCase();
-        const phone = cells[3].textContent.toLowerCase();
-        const role = cells[4].textContent;
-        const points = cells[5].textContent;
-
-        const matches = (!nameFilter || name.includes(nameFilter)) &&
+                const matches = (!nameFilter || name.includes(nameFilter)) &&
                         (!emailFilter || email.includes(emailFilter)) &&
                         (!addressFilter || address.includes(addressFilter)) &&
                         (!phoneFilter || phone.includes(phoneFilter)) &&
@@ -683,6 +678,7 @@ async function loadPointsHistory() {
 // Inicializar
 window.onload = () => {
     const token = localStorage.getItem('token');
+    console.log('Token en onload:', token);
     if (token) {
         showMainContent();
     }
