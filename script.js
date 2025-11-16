@@ -630,8 +630,7 @@ async function updateKey(role) {
     try {
         const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ role, key })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
             alert('Clave actualizada');
@@ -641,13 +640,50 @@ async function updateKey(role) {
     }
 }
 
-// Generar reporte
-function generateReport() {
-    const data = [['Material', 'Puntos', 'Dinero'], ['Plástico', 10, 0.5]];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
-    XLSX.writeFile(wb, 'reporte_reciclaje.xlsx');
+// Función para generar reporte en Excel
+async function generateReport() {
+    try {
+        // Obtener valores de reciclaje
+        const recyclingResponse = await fetch(`${API_BASE_URL}/api/recycling-values`);
+        const recyclingValues = await recyclingResponse.json();
+
+        // Obtener usuarios (solo gestores y admins pueden ver esto)
+        const usersResponse = await fetch(`${API_BASE_URL}/api/users`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const users = await usersResponse.json();
+
+        // Crear workbook
+        const wb = XLSX.utils.book_new();
+
+        // Hoja 1: Valores de Reciclaje
+        const recyclingData = recyclingValues.map(v => ({
+            'Material': v.material,
+            'Valor (Puntos/kg)': v.value,
+            'Descripción': v.description
+        }));
+        const wsRecycling = XLSX.utils.json_to_sheet(recyclingData);
+        XLSX.utils.book_append_sheet(wb, wsRecycling, 'Valores de Reciclaje');
+
+        // Hoja 2: Usuarios Registrados
+        const usersData = users.map(u => ({
+            'Nombre': u.username,
+            'Email': u.email,
+            'Dirección': u.address,
+            'Teléfono': u.phone,
+            'Rol': u.role,
+            'Puntos': u.points
+        }));
+        const wsUsers = XLSX.utils.json_to_sheet(usersData);
+        XLSX.utils.book_append_sheet(wb, wsUsers, 'Usuarios Registrados');
+
+        // Descargar el archivo
+        XLSX.writeFile(wb, 'reporte_urco.xlsx');
+        alert('Reporte generado y descargado.');
+    } catch (error) {
+        console.error('Error generando reporte:', error);
+        alert('Error al generar el reporte.');
+    }
 }
 
 // Logout
@@ -748,3 +784,4 @@ window.onload = () => {
         }
     }
 };
+
