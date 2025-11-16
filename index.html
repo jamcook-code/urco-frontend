@@ -161,10 +161,18 @@
                 <div class="tab-pane fade" id="aliado" role="tabpanel">
                     <h3>Panel de Aliado</h3>
                     <form id="deduct-points-form">
+                        <label for="deduct-name">Nombre del beneficiario:</label>
                         <input type="text" id="deduct-name" placeholder="Nombre del beneficiario" class="form-control mb-2" required>
+                        
+                        <label for="points-to-deduct">Puntos a descontar:</label>
                         <input type="number" id="points-to-deduct" placeholder="Puntos a descontar" class="form-control mb-2" required>
+                        
+                        <label for="deduct-description">Descripción:</label>
                         <input type="text" id="deduct-description" placeholder="Descripción" class="form-control mb-2" required>
-                        <input type="password" id="deduct-key" placeholder="Contraseña del beneficiario" class="form-control mb-2">
+                        
+                        <label for="deduct-key">Contraseña del beneficiario:</label>
+                        <input type="password" id="deduct-key" placeholder="Contraseña del beneficiario" class="form-control mb-2" required>
+                        
                         <button type="submit" class="btn btn-danger">Descontar Puntos</button>
                     </form>
                 </div>
@@ -327,7 +335,7 @@
                     <h5 class="modal-title">Canjear Puntos</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                                <div class="modal-body">
                     <p>Puntos disponibles: <span id="redeem-points"></span></p>
                     <button class="btn btn-info">Canjear por Recompensa</button>
                 </div>
@@ -381,3 +389,5 @@
     <script src="script.js"></script>
 </body>
 </html>
+
+                    

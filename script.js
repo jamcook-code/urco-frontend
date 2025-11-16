@@ -212,22 +212,17 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
     const username = document.getElementById('deduct-name').value;
     const points = document.getElementById('points-to-deduct').value;
     const description = document.getElementById('deduct-description').value;
-    const keyOrPassword = document.getElementById('deduct-key').value;
+    const password = document.getElementById('deduct-key').value; // Cambiar a 'password' para claridad
 
-    console.log('Valores obtenidos:', { username, points, description, keyOrPassword }); // Log 2: Ver valores
+    console.log('Valores obtenidos:', { username, points, description, password }); // Log 2: Ver valores
     if (!username || !points) {
         alert('Completa todos los campos');
         return;
     }
 
     console.log('Antes de definir body'); // Log 3: Antes de definir body
-    // Enviar el campo correcto según el rol
-    const body = { username, points, description };
-    if (currentUser.role === 'aliado') {
-        body.key = keyOrPassword; // Para aliado, enviar key
-    } else if (currentUser.role === 'user') {
-        body.password = keyOrPassword; // Para user, enviar password
-    }
+    // Enviar password para ambos roles (usando la contraseña del beneficiario)
+    const body = { username, points, description, password };
 
     console.log('Enviando deduct-points:', body); // Log 4: El que ya tienes
     console.log('Antes del fetch'); // Log 5: Antes del fetch
