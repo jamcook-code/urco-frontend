@@ -205,27 +205,22 @@ document.getElementById('assign-points-form').addEventListener('submit', async (
     }
 });
 
-// Descontar puntos (aliado o user) con aviso
+// Descontar puntos (aliado o user) usando contraseña del beneficiario
 document.getElementById('deduct-points-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    console.log('Inicio de deduct-points-form'); // Log 1: Ver si entra al evento
+    console.log('Inicio de deduct-points-form');
     const username = document.getElementById('deduct-name').value;
     const points = document.getElementById('points-to-deduct').value;
     const description = document.getElementById('deduct-description').value;
-    const password = document.getElementById('deduct-key').value; // Cambiar a 'password' para claridad
+    const password = document.getElementById('deduct-key').value;
 
-    console.log('Valores obtenidos:', { username, points, description, password }); // Log 2: Ver valores
+    console.log('Valores obtenidos:', { username, points, description, password });
     if (!username || !points) {
         alert('Completa todos los campos');
         return;
     }
 
-    console.log('Antes de definir body'); // Log 3: Antes de definir body
-    // Enviar password para ambos roles (usando la contraseña del beneficiario)
     const body = { username, points, description, password };
-
-    console.log('Enviando deduct-points:', body); // Log 4: El que ya tienes
-    console.log('Antes del fetch'); // Log 5: Antes del fetch
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/deduct-points`, {
@@ -233,7 +228,7 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify(body)
         });
-        console.log('Después del fetch, response status:', response.status); // Log 6: Después del fetch
+        console.log('Después del fetch, response status:', response.status);
         if (response.ok) {
             alert('Puntos descontados');
         } else {
@@ -244,7 +239,6 @@ document.getElementById('deduct-points-form').addEventListener('submit', async (
         console.error('Error:', error);
     }
 });
-
 
 // Actualizar valores de reciclaje (gestor/admin)
 document.getElementById('update-values-form').addEventListener('submit', async (e) => {
@@ -339,7 +333,8 @@ function showUpdateValuesModal() {
 }
 
 function showUserManagementModal() {
-    loadUsers();
+    // Carga la tabla de usuarios del panel Admin y abre el modal
+    loadAdminUsersTable();
     new bootstrap.Modal(document.getElementById('userManagementModal')).show();
 }
 
@@ -624,19 +619,33 @@ async function loadRegistrationKeys() {
     }
 }
 
-// Actualizar clave (admin)
+// Actualizar clave (admin) - corregido
 async function updateKey(role) {
-    const key = document.getElementById(`key-${key.role}`).value;
+    const input = document.getElementById(`key-${role}`);
+    if (!input) {
+        alert(`No se encontró el campo para el rol ${role}`);
+        return;
+    }
+    const key = input.value;
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/admin/registration-keys`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
+            body: JSON.stringify({ role, key })
         });
         if (response.ok) {
             alert('Clave actualizada');
+        } else {
+            const data = await response.json().catch(() => ({}));
+            alert(data.message || `Error (status ${response.status})`);
         }
     } catch (error) {
         console.error('Error:', error);
+        alert('Error de red al actualizar la clave');
     }
 }
 
@@ -678,7 +687,7 @@ async function generateReport() {
         XLSX.utils.book_append_sheet(wb, wsUsers, 'Usuarios Registrados');
 
         // Descargar el archivo
-        XLSX.writeFile(wb, 'reporte_urco.xlsx');
+                XLSX.writeFile(wb, 'reporte_urco.xlsx');
         alert('Reporte generado y descargado.');
     } catch (error) {
         console.error('Error generando reporte:', error);
@@ -700,25 +709,30 @@ function showMainContent() {
     document.getElementById('login-section').style.display = 'none';
     document.getElementById('main-content').style.display = 'block';
     console.log('Después de mostrar main-content');
+
     if (!currentUser) {
         console.log('currentUser es null, redirigiendo a login');
         logout();
         return;
     }
 
-    // Cambiar placeholder del campo deduct-key según rol
+    // Unificar placeholder: ahora siempre se usa la contraseña del beneficiario
     const deductKeyField = document.getElementById('deduct-key');
-    if (currentUser.role === 'aliado') {
-        deductKeyField.placeholder = 'Clave del beneficiario';
-    } else if (currentUser.role === 'user') {
+    if (deductKeyField) {
         deductKeyField.placeholder = 'Contraseña del beneficiario';
     }
 
     console.log('showMainContent ejecutado, rol:', currentUser.role);
     console.log('showMainContent ejecutado, currentUser:', currentUser);
-    document.getElementById('user-role-display').textContent = `Tipo de Usuario: ${currentUser.role}`;
-    document.getElementById('user-points').textContent = currentUser.points;
-    document.getElementById('welcome-message').textContent = `Bienvenido ${currentUser.username}`;
+
+    const userRoleDisplay = document.getElementById('user-role-display');
+    if (userRoleDisplay) userRoleDisplay.textContent = `Tipo de Usuario: ${currentUser.role}`;
+
+    const pointsSpan = document.getElementById('user-points');
+    if (pointsSpan) pointsSpan.textContent = currentUser.points || 0;
+
+    const welcome = document.getElementById('welcome-message');
+    if (welcome) welcome.textContent = `Bienvenido ${currentUser.username || currentUser.email || ''}`;
 
     // Ocultar todas las tabs primero
     const tabs = document.querySelectorAll('#roleTabs .nav-item');
@@ -732,25 +746,40 @@ function showMainContent() {
 
     // Mostrar solo el panel correspondiente al rol
     if (currentUser.role === 'user') {
-        document.getElementById('beneficiario-tab').style.display = 'block';
-        document.getElementById('beneficiario').classList.add('show', 'active');
+        const tab = document.getElementById('beneficiario-tab');
+        const pane = document.getElementById('beneficiario');
+        if (tab) tab.style.display = 'block';
+        if (pane) pane.classList.add('show', 'active');
         loadPointsHistory();
     } else if (currentUser.role === 'gestor') {
-        document.getElementById('gestor-tab').style.display = 'block';
-        document.getElementById('gestor').classList.add('show', 'active');
+        const tab = document.getElementById('gestor-tab');
+        const pane = document.getElementById('gestor');
+        if (tab) tab.style.display = 'block';
+        if (pane) pane.classList.add('show', 'active');
         loadUsersTable();
     } else if (currentUser.role === 'aliado') {
-        document.getElementById('aliado-tab').style.display = 'block';
-        document.getElementById('aliado').classList.add('show', 'active');
+        const tab = document.getElementById('aliado-tab');
+        const pane = document.getElementById('aliado');
+        if (tab) tab.style.display = 'block';
+        if (pane) pane.classList.add('show', 'active');
     } else if (currentUser.role === 'admin') {
-        document.getElementById('gestor-tab').style.display = 'block';
-        document.getElementById('admin-tab').style.display = 'block';
-        document.getElementById('admin').classList.add('show', 'active');
+        // Admin: acceso completo al panel Gestor y mantiene sus opciones exclusivas
+        const gestorTab = document.getElementById('gestor-tab');
+        const adminTab = document.getElementById('admin-tab');
+        const adminPane = document.getElementById('admin');
+
+        if (gestorTab) gestorTab.style.display = 'block';
+        if (adminTab) adminTab.style.display = 'block';
+
+        // Dejar activo el panel Admin y precargar datos del Gestor
+        if (adminPane) adminPane.classList.add('show', 'active');
+        loadUsersTable(); // Precargar la tabla "Usuarios Registrados" del Gestor
     }
 
     // Cargar tabla global para todos
     loadRecyclingValuesTable();
 }
+
 // Cargar historial de puntos (beneficiario)
 async function loadPointsHistory() {
     try {
@@ -759,6 +788,7 @@ async function loadPointsHistory() {
         });
         const history = await response.json();
         const tbody = document.querySelector('#points-history tbody');
+        if (!tbody) return;
         tbody.innerHTML = '';
         history.forEach(entry => {
             const date = new Date(entry.date).toLocaleDateString('es-ES'); // Día/mes/año
@@ -777,11 +807,11 @@ window.onload = () => {
     if (token) {
         const decoded = decodeToken(token);
         if (decoded) {
-            currentUser = { _id: decoded._id, role: decoded.role, email: decoded.email }; // Setear básico desde token
+            // Setea datos mínimos; el resto llega al hacer login normal
+            currentUser = { _id: decoded._id, role: decoded.role, email: decoded.email || '' };
             showMainContent();
         } else {
             logout();
         }
     }
 };
-
