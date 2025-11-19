@@ -24,8 +24,35 @@ body {
     background-color: var(--primary-color) !important;
 }
 
-.navbar-brand img {
-    max-height: 40px;
+/* LOGO DE URCO EN LOGIN (NO CAMBIAR) */
+#login-section img[alt="URCO"] {
+    height: 140px !important;
+    display: block !important;
+    margin: 0 auto 8px auto !important;
+}
+
+/* 🔥 LOGO URCO EN TODAS LAS DEMÁS PANTALLAS — MUCHO MÁS GRANDE, ESQUINA IZQUIERDA */
+.navbar-brand img[alt="URCO"] {
+    height: 140px !important;      /* tamaño grande */
+    width: auto !important;
+    object-fit: contain !important;
+    position: relative;
+    left: 0;
+    top: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+
+    /* Quitar borde/blanco del PNG (blend con fondo) */
+    mix-blend-mode: multiply !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+@media (min-width: 992px) {
+    .navbar-brand img[alt="URCO"] {
+        height: 160px !important;  /* aún más grande en pantallas grandes */
+    }
 }
 
 #login-section img {
@@ -94,6 +121,7 @@ body {
     font-size: 1.5em;
     font-weight: bold;
 }
+
 /* Fondo con logo PROMAP en todas las pantallas (marca de agua) */
 html, body {
   height: 100%;
@@ -104,32 +132,8 @@ body::before {
   position: fixed;
   inset: 0;
   background: url("images/logo_promap.png") no-repeat center center;
-  background-size: 40vw auto; /* ajusta el tamaño del logo de fondo */
-  opacity: 0.3;              /* marca de agua sutil; ajusta si lo quieres más visible */
+  background-size: 40vw auto;
+  opacity: 0.30;
   z-index: -1;
   pointer-events: none;
-}
-
-/* Login: URCO más grande y centrado */
-#login-section img[alt="URCO"] {
-  height: 140px !important;   /* ajustar el tamaño  */
-  display: block !important;
-  margin: 0 auto 8px auto !important; /* centrado */
-}
-
-/* Navbar: URCO más grande */
-.navbar-brand img[alt="URCO"] {
-  height: 90px !important;
-}
-@media (min-width: 992px) {
-  .navbar-brand img[alt="URCO"] {
-    height: 100px !important;
-  }
-}
-/* Eliminar borde/blanco perceptible del logo URCO */
-.navbar-brand img[alt="URCO"],
-#login-section img[alt="URCO"] {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
 }
