@@ -105,29 +105,21 @@ body::before {
   inset: 0;
   background: url("images/logo_promap.png") no-repeat center center;
   background-size: 40vw auto; /* ajusta el tamaño del logo de fondo */
-  opacity: 0.08;              /* marca de agua sutil; ajusta si lo quieres más visible */
+  opacity: 0.18;              /* marca de agua sutil; ajusta si lo quieres más visible */
   z-index: -1;
   pointer-events: none;
 }
 
 /* Login: URCO más grande y centrado */
 #login-section img[alt="URCO"] {
-  height: 140px !important;   /* ajusta el tamaño si lo quieres más grande/pequeño */
+  height: 140px !important;   /* ajustar el tamaño  */
   display: block !important;
   margin: 0 auto 8px auto !important; /* centrado */
 }
 
-/* (Opcional) Mantener visible el logo de PROMAP arriba del login */
-#login-section img[alt="Promap"] {
-  display: block !important;
-  margin: 6px auto 0 !important;
-  height: 60px !important;
-  opacity: 0.9;
-}
-
 /* Navbar: URCO más grande en el resto de pantallas */
 .navbar-brand img[alt="URCO"] {
-  height: 56px !important;    /* antes 40px; ajusta según prefieras */
+  height: 70px !important;    /* antes 40px; ajusta según prefieras */
 }
 @media (min-width: 992px) {
   .navbar-brand img[alt="URCO"] {
