@@ -105,7 +105,7 @@ body::before {
   inset: 0;
   background: url("images/logo_promap.png") no-repeat center center;
   background-size: 40vw auto; /* ajusta el tamaño del logo de fondo */
-  opacity: 0.18;              /* marca de agua sutil; ajusta si lo quieres más visible */
+  opacity: 0.3;              /* marca de agua sutil; ajusta si lo quieres más visible */
   z-index: -1;
   pointer-events: none;
 }
@@ -117,12 +117,19 @@ body::before {
   margin: 0 auto 8px auto !important; /* centrado */
 }
 
-/* Navbar: URCO más grande en el resto de pantallas */
+/* Navbar: URCO más grande */
 .navbar-brand img[alt="URCO"] {
-  height: 70px !important;    /* antes 40px; ajusta según prefieras */
+  height: 90px !important;
 }
 @media (min-width: 992px) {
   .navbar-brand img[alt="URCO"] {
-    height: 64px !important;
+    height: 100px !important;
   }
+}
+/* Eliminar borde/blanco perceptible del logo URCO */
+.navbar-brand img[alt="URCO"],
+#login-section img[alt="URCO"] {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
 }
