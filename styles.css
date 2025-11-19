@@ -137,3 +137,18 @@ body::before {
   z-index: -1;
   pointer-events: none;
 }
+/* LOGO URCO – tamaño grande y dominante */
+.logo-urco {
+    height: 150px !important;
+    width: auto !important;
+    object-fit: contain !important;
+
+    /* Quitar halo/blanco del PNG */
+    mix-blend-mode: multiply !important;
+    background: transparent !important;
+    border: none !important;
+
+    /* Asegurarlo en la esquina superior izquierda */
+    margin: 0 !important;
+    padding: 0 !important;
+}
